@@ -1,17 +1,27 @@
 <template>
   <ul class="task__tags">
-    <li v-for="(tag, index) in tags" :key="index">
-      <span class="task__tag"> {{ tag }} </span>
+    <li v-for="(tag, index) in tagsArray" :key="index">
+      <span class="task__tag">
+        {{ tag }}
+      </span>
     </li>
   </ul>
 </template>
 
-<script lang="ts" setup>
-interface Props {
-  tags: Array<string>;
-}
+<script setup>
+import { computed } from "vue";
+import { getTagsArrayFromString } from "@/common/helpers";
 
-defineProps<Props>();
+const props = defineProps({
+  tags: {
+    type: String,
+    required: true,
+  },
+});
+
+const tagsArray = computed(() => {
+  return getTagsArrayFromString(props.tags);
+});
 </script>
 
 <style lang="scss" scoped>
