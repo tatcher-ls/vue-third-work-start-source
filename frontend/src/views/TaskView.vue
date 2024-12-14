@@ -1,8 +1,8 @@
 <template>
   <div
     ref="dialog"
-    class="task-card"
     tabindex="0"
+    class="task-card"
     @click.self="closeDialog"
     @keydown.esc="closeDialog"
   >
