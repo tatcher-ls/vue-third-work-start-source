@@ -2,6 +2,7 @@
   <div class="app_layout">
     <app-layout-header />
     <div class="content">
+      <app-layout-sidebar />
       <slot />
     </div>
   </div>
@@ -9,19 +10,7 @@
 
 <script setup>
 import AppLayoutHeader from "./AppLayoutHeader.vue";
-
-const props = defineProps({
-  tasks: {
-    type: Array,
-    required: true,
-  },
-  filters: {
-    type: Object,
-    required: true,
-  },
-});
-
-defineEmits(["updateTasks"]);
+import AppLayoutSidebar from "./AppLayoutSidebar.vue";
 </script>
 
 <style lang="scss" scoped>
