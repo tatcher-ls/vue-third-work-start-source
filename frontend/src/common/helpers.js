@@ -140,3 +140,13 @@ export const createUUIDv4 = () => {
 export const createNewDate = () => {
   return new Date(new Date().setHours(23, 59, 59, 999));
 };
+
+export const getPublicImageNew = (path) => {
+  const publicUrl = "src/assets/img/";
+  return `${publicUrl}/${path}`;
+};
+
+export const getPublicImage = (path) => {
+  const publicUrl = "/api";
+  return `${publicUrl}/${path}`;
+};

@@ -1,11 +1,11 @@
 <template>
-  <!--  Отслеживает, в какую колонку передана задача-->
+  <!--  Отслеживает в какую колонку передана задача-->
   <app-drop
     class="backlog"
     :class="{ 'backlog--hide': state.backlogIsHidden }"
     @drop="moveTask"
   >
-    <!--  Отвечает за открытие и закрытие бэклога-->
+    <!--  Отвечает за открытие/закрытие беклога-->
     <button
       class="backlog__title"
       @click="state.backlogIsHidden = !state.backlogIsHidden"
@@ -32,9 +32,9 @@
           </div>
 
           <div class="backlog__target-area">
-            <!--  Задачи в бэклоге-->
+            <!--  Задачи в беклоге-->
             <task-card
-              v-for="task in sidebarTasks"
+              v-for="task in tasksStore.sidebarTasks"
               :key="task.id"
               :task="task"
               class="backlog__task"
@@ -51,15 +51,26 @@
 import { reactive } from "vue";
 import AppDrop from "@/common/components/AppDrop.vue";
 import TaskCard from "@/modules/tasks/components/TaskCard.vue";
-import { getTargetColumnTasks, addActive } from "@/common/helpers";
-import { useTasksStore } from "@/stores/tasks";
+import {
+  getTargetColumnTasks,
+  addActive,
+  getPublicImage,
+} from "@/common/helpers";
+import { useTasksStore, useAuthStore } from "@/stores";
 
 const tasksStore = useTasksStore();
+const authStore = useAuthStore();
 
 const state = reactive({ backlogIsHidden: false });
 
+// console.log(authStore.user);
+//
+// const userImage = getPublicImage(authStore.user.avatar);
+
+// const userImage = "";
+
 function moveTask(active, toTask) {
-  // Не обновляем массив, если задача не перемещалась
+  // Не обновляем массив если задача фактически не перемещалась
   if (toTask && active.id === toTask.id) {
     return;
   }

@@ -1,94 +1,71 @@
 <template>
   <!--    Компонент AppDrop отслеживает куда упала задача -->
-  <app-drop @drop="drop">
+  <app-drop @drop="$emit('drop', $event)">
     <!--      Компонент AppDrag определяет какая задача перемещается -->
     <app-drag :transfer-data="task">
       <div class="task" @click="router.push({ path: `/${task.id}` })">
-        <!--        Этот блок показывает пользователя, который работает над задачей-->
-        <div
-            v-if="task.user"
-            class="task__user"
-        >
+        <!--        Данный блок показывает пользователя, который работает над задачей-->
+        <div v-if="taskUser" class="task__user">
           <div class="task__avatar">
             <img
-                :src="getImage(task.user.avatar)"
-                alt="Аватар пользователя"
-                width="20"
-                height="20"
+              :src="getPublicImage(taskUser.avatar)"
+              alt="Аватар пользователя"
+              width="20"
+              height="20"
             />
           </div>
-          {{ task.user.name }}
+          {{ taskUser.name }}
         </div>
-        <!--        Этот блок показывает статусы задачи-->
+        <!--        Данный блок показавает статусы задачи-->
         <div class="task__statuses">
           <span
-              v-if="task.status"
-              class="task__status"
-              :class="`task__status--${task.status}`"
+            v-if="task.status"
+            class="task__status"
+            :class="`task__status--${task.status}`"
           />
           <span
-              v-if="task.timeStatus"
-              class="task__status"
-              :class="`task__status--${task.timeStatus}`"
+            v-if="task.timeStatus"
+            class="task__status"
+            :class="`task__status--${task.timeStatus}`"
           />
         </div>
-        <h5
-            class="task__title"
-            :class="{ 'task__title--first': !task.user }"
-        >
+        <h5 class="task__title" :class="{ 'task__title--first': !task.user }">
           {{ task.title }}
         </h5>
         <!--        Тэги задачи вынесены в отдельный компонент-->
         <task-card-tags
-            v-if="task.tags && task.tags.length"
-            :tags="task.tags"
+          v-if="task.tags && task.tags.length"
+          :tags="task.tags"
         />
       </div>
     </app-drag>
   </app-drop>
 </template>
 
-<script lang="ts" setup>
-import AppDrag from '@/common/components/AppDrag.vue'
-import AppDrop from '@/common/components/AppDrop.vue'
-import TaskCardTags from "@/modules/tasks/components/TaskCardTags.vue";
-import {getImage} from '@/common/helpers';
-import {useRouter} from 'vue-router'
+<script setup>
+import AppDrag from "@/common/components/AppDrag.vue";
+import AppDrop from "@/common/components/AppDrop.vue";
+import TaskCardTags from "./TaskCardTags.vue";
+import { getPublicImage } from "@/common/helpers";
+import { useRouter } from "vue-router";
+import { useUsersStore } from "@/stores";
+import { computed } from "vue";
 
-interface Props {
-  task: Task;
-}
+const usersStore = useUsersStore();
+const router = useRouter();
 
-interface Task {
-  id: number
-  title: string
-  sortOrder: number
-  dueDate: any
-  tags: string[]
-  columnId: number
-  statusId: any
-  userId: string
-  user: User
-  status: string
-  timeStatus: string
-}
+const props = defineProps({
+  task: {
+    type: Object,
+    required: true,
+  },
+});
 
-interface User {
-  id: string
-  name: string
-  avatar: string
-}
+defineEmits(["drop", "click"]);
 
-defineProps<Props>()
-
-const emit = defineEmits(['drop'])
-const router = useRouter()
-
-function drop(event) {
-  console.log()
-  emit('drop', event)
-}
-
+const taskUser = computed(() => {
+  return usersStore.users.find((user) => user.id === props.task.userId);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -223,4 +200,3 @@ function drop(event) {
   }
 }
 </style>
-

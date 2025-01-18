@@ -15,18 +15,22 @@
             <!--            Список пользователей-->
             <ul class="user-filter">
               <li
-                v-for="user in users"
+                v-for="user in usersStore.users"
                 :key="user.id"
                 :title="user.name"
                 class="user-filter__item"
-                :class="{ active: filters.users.some((id) => id === user.id) }"
+                :class="{
+                  active: filtersStore.filters.users.some(
+                    (id) => id === user.id,
+                  ),
+                }"
                 @click="
                   filtersStore.applyFilters({ item: user.id, entity: 'users' })
                 "
               >
                 <a class="user-filter__button">
                   <img
-                    :src="getImage(user.avatar)"
+                    :src="getPublicImage(user.avatar)"
                     alt="Аватар юзера"
                     width="24"
                     height="24"
@@ -81,7 +85,7 @@
 <script setup>
 import { STATUSES } from "../common/constants";
 import DeskColumn from "@/modules/columns/components/DeskColumn.vue";
-import { getImage } from "../common/helpers";
+import { getPublicImage } from "../common/helpers";
 import { useUsersStore, useColumnsStore, useFiltersStore } from "@/stores";
 
 // Определяем хранилища

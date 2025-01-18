@@ -1,7 +1,4 @@
 <template>
-  <!-- Мы добавили tabindex и ref на корневой элемент,
-  чтобы при открытии компонента фокус был направлен на диалоговое окно,
-  а клавиша Esc работала без дополнительного клика на окно.-->
   <div
     ref="dialog"
     class="task-card"
@@ -24,7 +21,6 @@
             class="task-card__name"
             max="37"
           />
-
           <!--          Кнопка удаления задачи-->
           <a
             v-if="taskToEdit"
@@ -43,6 +39,7 @@
       <!--      Блок статуса задачи-->
       <div class="task-card__status">
         <h4 class="task-card__title">Выберите статус:</h4>
+
         <!--        Список статусов задачи-->
         <ul class="meta-filter task-card__meta">
           <li
@@ -73,7 +70,6 @@
         <ul class="task-card__params">
           <!--          Блок выбора пользователя-->
           <tasks-card-creator-user-selector v-model="task.userId" />
-
           <!--          Блок выбора даты выполнения-->
           <tasks-card-creator-due-date-selector v-model="task.dueDate" />
         </ul>
@@ -158,25 +154,19 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
-import { cloneDeep } from "lodash";
-import { STATUSES } from "@/common/constants";
-import taskStatuses from "@/common/enums/taskStatuses";
-import { useTaskCardDate } from "@/common/composables";
 import TasksCardCreatorUserSelector from "./TaskCardCreatorUserSelector.vue";
 import TasksCardCreatorDueDateSelector from "./TaskCardCreatorDueDateSelector.vue";
 import TaskCardViewTicksList from "./TaskCardViewTicksList.vue";
-import { createUUIDv4, createNewDate } from "@/common/helpers";
-import AppButton from "@/common/components/AppButton.vue";
-import { validateFields } from "@/common/validator";
 import TaskCardCreatorTags from "./TaskCardCreatorTags.vue";
-import { useTasksStore } from "@/stores/tasks";
-
-const tasksStore = useTasksStore();
-
-const router = useRouter();
-const dialog = ref(null);
-const isFormValid = ref(true);
+import AppButton from "@/common/components/AppButton.vue";
+import { useRouter } from "vue-router";
+import { createUUIDv4, createNewDate } from "@/common/helpers";
+import { STATUSES } from "@/common/constants";
+import taskStatuses from "@/common/enums/taskStatuses";
+import { validateFields } from "@/common/validator";
+import { useTaskCardDate } from "@/common/composables";
+import { cloneDeep } from "lodash";
+import { useTasksStore, useTicksStore } from "@/stores";
 
 // Функция для создания новых задач
 const createNewTask = () => ({
@@ -193,7 +183,73 @@ const createNewTask = () => ({
   tags: "",
 });
 
+const createNewTick = () => ({
+  // Добавляем временный идентификатор до момента отправки на сервер
+  uuid: createUUIDv4(),
+  taskId: null,
+  text: "",
+  done: false,
+});
+
+const setEmptyValidations = () => ({
+  title: {
+    error: "",
+    rules: ["required"],
+  },
+  url: {
+    error: "",
+    rules: ["url"],
+  },
+});
+
+const router = useRouter();
+
+const props = defineProps({
+  taskToEdit: {
+    type: Object,
+    default: null,
+  },
+});
+
+// Определяем хранилище задач
+const tasksStore = useTasksStore();
+const ticksStore = useTicksStore();
+
+// Определяем если мы работаем над редактированием задачи или создаем новую
+const taskToWork = props.taskToEdit
+  ? cloneDeep(props.taskToEdit)
+  : createNewTask();
+
+const task = ref(taskToWork);
+const validations = ref(setEmptyValidations());
+const isFormValid = ref(true);
 const statusList = ref(STATUSES.slice(0, 3));
+const dialog = ref(null);
+
+// Отслеживаем изменения в задаче чтобы сбросить ошибки валидации
+watch(
+  task,
+  () => {
+    isFormValid.value = true;
+    validations.value = setEmptyValidations();
+  },
+  { deep: true },
+);
+
+onMounted(() => {
+  // Фокусируем на диалоговом окне чтобы сработала клавиша esc без дополнительного клика на окне
+  dialog.value.focus();
+});
+
+function closeDialog() {
+  // Закрытие диалога всего лишь переход на корневой маршрут
+  router.push("/");
+}
+
+function deleteTask() {
+  tasksStore.deleteTask(task.value.id);
+  router.push("/");
+}
 
 function setStatus(status) {
   const [key] = Object.entries(taskStatuses).find(
@@ -206,46 +262,6 @@ function setStatus(status) {
     task.value.statusId = null;
   }
 }
-
-// Определяем, если мы работаем над редактированием задачи или создаём новую
-const taskToWork = props.taskToEdit
-  ? cloneDeep(props.taskToEdit)
-  : createNewTask();
-
-const task = ref(taskToWork);
-
-function deleteTask() {
-  tasksStore.deleteTask(task.value.id);
-  router.push("/");
-}
-
-// валидации имени и ссылки
-const setEmptyValidations = () => ({
-  title: {
-    error: "",
-    rules: ["required"],
-  },
-  url: {
-    error: "",
-    rules: ["url"],
-  },
-});
-
-// Ошибка отобразится, если свойство validations.title.error — не пустая строка.
-const validations = ref(setEmptyValidations());
-
-function closeDialog() {
-  // Закрытие диалога, всего лишь переход на корневой маршрут
-  router.push("/");
-}
-
-const createNewTick = () => ({
-  // Добавляем временный идентификатор до момента отправки на сервер
-  uuid: createUUIDv4(),
-  taskId: null,
-  text: "",
-  done: false,
-});
 
 function createTick() {
   task.value.ticks.push(createNewTick());
@@ -273,44 +289,46 @@ function removeTick({ uuid, id }) {
   }
   if (id) {
     task.value.ticks = task.value.ticks.filter((tick) => tick.id !== id);
+    ticksStore.deleteTick(id);
   }
-}
-
-function submit() {
-  // Валидируем задачу
-  if (!validateFields(task.value, validations.value)) {
-    isFormValid.value = false;
-    return;
-  }
-  if (props.taskToEdit) {
-    // Редактируемая задача
-    tasksStore.editTask(task.value);
-  } else {
-    // Новая задача
-    tasksStore.addTask(task.value);
-  }
-  // Переход на главную страницу
-  router.push("/");
 }
 
 function setTags(tags) {
   task.value.tags = tags;
 }
 
-// Отслеживаем изменения в задаче, чтобы сбросить ошибки валидации
-watch(
-  task,
-  () => {
-    isFormValid.value = true;
-    validations.value = setEmptyValidations();
-  },
-  { deep: true },
-);
+async function submit() {
+  // Валидируем задачу
+  if (!validateFields(task.value, validations.value)) {
+    isFormValid.value = false;
+    return;
+  }
+  let taskId = task.value.id;
+  if (props.taskToEdit) {
+    // Редактируемая задача
+    await tasksStore.editTask(task.value);
+  } else {
+    // Новая задача
+    const newTask = await tasksStore.addTask(task.value);
+    taskId = newTask.id;
+  }
+  // Создать или обновить подзадачи
+  await submitTicks(taskId, task.value.ticks);
+  // Переход на главную страницу
+  await router.push("/");
+}
 
-onMounted(() => {
-  // Фокусируем на диалоговом окне, чтобы сработала клавиша Esc без дополнительного клика на окне
-  dialog.value.focus();
-});
+async function submitTicks(taskId, ticks) {
+  const promises = ticks.map((tick) => {
+    if (!tick.text) {
+      return;
+    }
+    delete tick.uuid;
+    tick.taskId = taskId;
+    return tick.id ? ticksStore.updateTick(tick) : ticksStore.addTick(tick);
+  });
+  await Promise.all(promises);
+}
 </script>
 
 <style lang="scss" scoped>

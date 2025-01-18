@@ -14,13 +14,13 @@ const route = useRoute();
 const router = useRouter();
 
 // Находим задачу из массива задач по id из строки URL
-const task = tasksStore.tasks.find((task) => +task.id === +route.params.id);
+const task = tasksStore.getTaskById(route.params.id);
 
 if (task) {
   const taskDate = task.dueDate;
   task.dueDate = taskDate ? new Date(taskDate) : createNewDate();
 } else {
-  // Перенаправляем на главную страницу, если задача не найдена
+  // Перенаправляем на главную страницу если задача не найдена
   router.push("/");
 }
 </script>
